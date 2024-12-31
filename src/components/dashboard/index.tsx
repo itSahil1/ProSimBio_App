@@ -27,19 +27,19 @@ const Index: React.FC = () => {
           <AtomIcon />
         </CTACard>
         <CTACard
-          subtitle="get access to more molecules"
+          subtitle="Create and customize molecules instantly for your research needs"
           title="Generate Molecule"
         >
           <Network />
         </CTACard>
         <CTACard
-          subtitle="get access to more molecules"
+          subtitle="Find specific compounds quickly with precise search tools"
           title="Search Compounds"
         >
           <SearchIcon />
         </CTACard>
         <CTACard
-          subtitle="get access to more molecules"
+          subtitle="Work together seamlessly to drive scientific breakthroughs"
           title="Collaborative Research"
         >
           <MessageCircle />

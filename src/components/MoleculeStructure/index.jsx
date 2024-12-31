@@ -4,19 +4,20 @@ import _ from "lodash";
 import PropTypes from "prop-types";
 import initRDKitModule from "@rdkit/rdkit";
 
+// Initialize RDKit once and handle loading errors
 const initRDKit = (() => {
   let rdkitLoadingPromise;
   return () => {
     if (!rdkitLoadingPromise) {
-      rdkitLoadingPromise = new Promise((resolve, reject) => {
-        initRDKitModule()
-          .then((RDKit) => {
-            resolve(RDKit);
-          })
-          .catch((e) => {
-            reject(e);
-          });
-      });
+      rdkitLoadingPromise = initRDKitModule()
+        .then((RDKit) => {
+          console.log("RDKit loaded successfully");
+          return RDKit;
+        })
+        .catch((error) => {
+          console.error("Failed to load RDKit:", error);
+          throw error;
+        });
     }
     return rdkitLoadingPromise;
   };
@@ -51,11 +52,11 @@ class MoleculeStructure extends Component {
     super(props);
 
     this.MOL_DETAILS = {
-      width: this.props.width,
-      height: this.props.height,
+      width: props.width,
+      height: props.height,
       bondLineWidth: 1,
       addStereoAnnotation: true,
-      ...this.props.extraDetails,
+      ...props.extraDetails,
     };
 
     this.state = {
@@ -65,104 +66,21 @@ class MoleculeStructure extends Component {
     };
   }
 
-  drawOnce = (() => {
-    let wasCalled = false;
-
-    return () => {
-      if (!wasCalled) {
-        wasCalled = true;
-        this.draw();
-      }
-    };
-  })();
-
-  draw() {
-    if (this.props.drawingDelay) {
-      setTimeout(() => {
-        this.drawSVGorCanvas();
-      }, this.props.drawingDelay);
-    } else {
-      this.drawSVGorCanvas();
-    }
-  }
-
-  drawSVGorCanvas() {
-    const mol = this.RDKit.get_mol(this.props.structure || "invalid");
-    const qmol = this.RDKit.get_qmol(this.props.subStructure || "invalid");
-    const isValidMol = this.isValidMol(mol);
-
-    if (this.props.svgMode && isValidMol) {
-      const svg = mol.get_svg_with_highlights(this.getMolDetails(mol, qmol));
-      this.setState({ svg });
-    } else if (isValidMol) {
-      const canvas = document.getElementById(this.props.id);
-      mol.draw_to_canvas_with_highlights(canvas, this.getMolDetails(mol, qmol));
-    }
-
-    mol?.delete();
-    qmol?.delete();
-  }
-
-  isValidMol(mol) {
-    return !!mol;
-  }
-
-  getMolDetails(mol, qmol) {
-    if (this.isValidMol(mol) && this.isValidMol(qmol)) {
-      const subStructHighlightDetails = JSON.parse(
-        mol.get_substruct_matches(qmol),
-      );
-      const subStructHighlightDetailsMerged = !_.isEmpty(
-        subStructHighlightDetails,
-      )
-        ? subStructHighlightDetails.reduce(
-            (acc, { atoms, bonds }) => ({
-              atoms: [...acc.atoms, ...atoms],
-              bonds: [...acc.bonds, ...bonds],
-            }),
-            { bonds: [], atoms: [] },
-          )
-        : subStructHighlightDetails;
-      return JSON.stringify({
-        ...this.MOL_DETAILS,
-        ...(this.props.extraDetails || {}),
-        ...subStructHighlightDetailsMerged,
-      });
-    } else {
-      return JSON.stringify({
-        ...this.MOL_DETAILS,
-        ...(this.props.extraDetails || {}),
-      });
-    }
-  }
-
   componentDidMount() {
+    // Initialize RDKit and set the loaded state once complete
     initRDKit()
       .then((RDKit) => {
         this.RDKit = RDKit;
-        this.setState({ rdKitLoaded: true });
-        try {
-          this.draw();
-        } catch (err) {
-          console.log(err);
-        }
+        this.setState({ rdKitLoaded: true }, this.draw);
       })
-      .catch((err) => {
-        console.log(err);
+      .catch((error) => {
+        console.error("RDKit initialization error:", error);
         this.setState({ rdKitError: true });
       });
   }
 
   componentDidUpdate(prevProps) {
-    if (
-      !this.state.rdKitError &&
-      this.state.rdKitLoaded &&
-      !this.props.svgMode
-    ) {
-      this.drawOnce();
-    }
-
-    if (this.state.rdKitLoaded) {
+    if (!this.state.rdKitError && this.state.rdKitLoaded) {
       const shouldUpdateDrawing =
         prevProps.structure !== this.props.structure ||
         prevProps.svgMode !== this.props.svgMode ||
@@ -177,57 +95,110 @@ class MoleculeStructure extends Component {
     }
   }
 
-  render() {
-    console.log("props score number:", this.props.scores);
-    if (this.state.rdKitError) {
-      return "Error loading renderer.";
-    }
-    if (!this.state.rdKitLoaded) {
-      return "Loading renderer...";
-    }
-
-    const mol = this.RDKit.get_mol(this.props.structure || "invalid");
-    const isValidMol = this.isValidMol(mol);
-    mol?.delete();
-
-    if (!isValidMol) {
-      return (
-        <span title={`Cannot render structure: ${this.props.structure}`}>
-          Render Error.
-        </span>
-      );
-    } else if (this.props.svgMode) {
-      return (
-        <div
-          title={this.props.structure}
-          className={"molecule-structure-svg " + (this.props.className || "")}
-          style={{ width: this.props.width, height: this.props.height }}
-          dangerouslySetInnerHTML={{ __html: this.state.svg }}
-        ></div>
-      );
+  draw = () => {
+    // Delay drawing if specified
+    if (this.props.drawingDelay) {
+      setTimeout(this.drawSVGorCanvas, this.props.drawingDelay);
     } else {
-      return (
-        <div
-          className={
-            "molecule-canvas-container " + (this.props.className || "")
-          }
-        >
-          <canvas
-            title={this.props.structure}
-            id={this.props.id}
-            width={this.props.width}
-            height={this.props.height}
-          ></canvas>
-          {this.props.scores ? (
-            <p className="text-red-600 z-50 p-10">
-              Score: {this.props.scores.toFixed(2)}
-            </p>
-          ) : (
-            ""
-          )}
-        </div>
-      );
+      this.drawSVGorCanvas();
     }
+  };
+
+  drawSVGorCanvas = () => {
+    const { structure, subStructure, svgMode, id } = this.props;
+  
+    const mol = this.RDKit.get_mol(structure || "invalid");
+    const qmol = this.RDKit.get_qmol(subStructure || "invalid");
+  
+    if (!this.isValidMol(mol)) {
+      console.error("Invalid molecule structure:", structure);
+      mol?.delete();
+      qmol?.delete();
+      return;
+    }
+    console.log("Drawing molecule with structure:", structure);
+
+    if (svgMode) {
+      this.drawSVG(mol, qmol);
+    } else {
+      this.drawCanvas(mol, qmol, id);
+    }
+  
+    // Clean up RDKit objects
+    mol.delete();
+    qmol?.delete();
+  };
+
+  drawSVG(mol, qmol) {
+    try {
+      const svg = mol.get_svg_with_highlights(this.getMolDetails(mol, qmol));
+      this.setState({ svg });
+    } catch (error) {
+      console.error("SVG rendering error:", error);
+    }
+  }
+
+
+  drawCanvas(mol, qmol, id) {
+    try {
+      const canvas = document.getElementById(id);
+      if (canvas) {
+        mol.draw_to_canvas_with_highlights(canvas, this.getMolDetails(mol, qmol));
+      } else {
+        console.error("Canvas element not found for id:", id);
+      }
+    } catch (error) {
+      console.error("Canvas rendering error:", error);
+    }
+  }
+  isValidMol(mol) {
+    return !!mol && mol.get_num_atoms() > 0 && mol.get_num_bonds() > 0;
+  }
+  
+
+  getMolDetails(mol, qmol) {
+    const { extraDetails } = this.props;
+    if (mol && qmol) {
+      const subStructDetails = JSON.parse(mol.get_substruct_matches(qmol)) || {};
+      const mergedDetails = subStructDetails.reduce(
+        (acc, { atoms, bonds }) => ({
+          atoms: [...acc.atoms, ...atoms],
+          bonds: [...acc.bonds, ...bonds],
+        }),
+        { atoms: [], bonds: [] }
+      );
+      return JSON.stringify({ ...this.MOL_DETAILS, ...extraDetails, ...mergedDetails });
+    }
+    return JSON.stringify({ ...this.MOL_DETAILS, ...extraDetails });
+  }
+
+  render() {
+    const { rdKitLoaded, rdKitError, svg } = this.state;
+    const { structure, svgMode, className, width, height, scores } = this.props;
+
+    if (rdKitError) return <span>Error loading RDKit renderer.</span>;
+    if (!rdKitLoaded) return <span>Loading RDKit renderer...</span>;
+
+    const mol = this.RDKit.get_mol(structure || "invalid");
+    if (!this.isValidMol(mol)) {
+      mol.delete();
+      return <span title={`Cannot render structure: ${structure}`}>Render Error.</span>;
+    }
+    mol.delete();
+
+    return svgMode ? (
+      <div
+        title={structure}
+        className={`molecule-structure-svg ${className}`}
+        style={{ width, height }}
+        dangerouslySetInnerHTML={{ __html: svg }}
+      ></div>
+    ) : (
+      <div className={`molecule-canvas-container ${className}`}>
+        <canvas title={structure} id={this.props.id} width={width} height={height}></canvas>
+        {scores ? <p className="text-red-600 z-50 p-10">Score: {scores.toFixed(2)}</p> : null}
+      </div>
+    );
   }
 }
 

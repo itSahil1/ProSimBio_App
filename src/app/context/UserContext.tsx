@@ -12,9 +12,9 @@ const UserContext = createContext<any>(null);
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const { data: session } = useSession();
   const [user, setUser] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    photo: "/images/user/user-01.png",
+    firstName: "Sahil",
+    lastName: "Ansari",
+    photo: "/images/user/profilepic.jpg",
     jobTitle: "Drug Researcher",
     userBio: "",
   });
@@ -24,8 +24,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       if (session?.user?.email) {
         const fetchedUser = await getUserByEmail(session.user.email);
         setUser({
-          firstName: fetchedUser?.firstName || "John",
-          lastName: fetchedUser?.lastName || "Doe",
+          firstName: fetchedUser?.firstName || "Sahil",
+          lastName: fetchedUser?.lastName || "Ansari",
           photo: fetchedUser?.photo || "/images/user/user-01.png",
           jobTitle: fetchedUser?.jobTitle || "Researcher",
           userBio: fetchedUser?.userBio || "",

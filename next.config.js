@@ -22,6 +22,10 @@ const nextConfig = {
 
     return config;
   },
+  experimental: {
+     serverActions: { 
+      bodySizeLimit: '50mb', // Increase the body size limit as needed 
+      }, },
 };
 
 module.exports = nextConfig;

@@ -87,7 +87,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   priority
                 />
               </div>
-              <p className="text-xl font-semibold text-white">ProteinBind</p>
+              <p className="text-xl font-semibold text-white">ProSimBio</p>
             </div>
           </Link>
 

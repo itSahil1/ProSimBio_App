@@ -31,9 +31,6 @@ const ChartThree: React.FC = () => {
                 <span className="text-gray-900 text-sm font-semibold dark:text-white">
                   {user.firstName}{" "}
                 </span>
-                <span className="text-gray-500 dark:text-gray-400 text-sm font-normal">
-                  11:46
-                </span>
               </div>
               <p className="text-gray-900 py-2.5 text-sm font-normal dark:text-white">
                 That's awesome. I think we are making a pretty good progress

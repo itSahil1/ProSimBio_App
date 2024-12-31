@@ -46,70 +46,71 @@ const ModalLayout = () => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
-
     const API_KEY =
-      "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";
+      "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";
 
     const invokeUrl =
       "https://health.api.nvidia.com/v1/biology/nvidia/molmim/generate";
 
-    const payload = {
-      algorithm: "CMA-ES",
-      num_molecules: parseInt(numMolecules),
-      property_name: "QED",
-      minimize: false,
-      min_similarity: parseFloat(minSimilarity),
-      particles: parseInt(particles),
-      iterations: parseInt(iterations),
-      smi: smiles,
-    };
-
-    try {
-      const response = await fetch(invokeUrl, {
-        method: "POST",
+      const payload = {
+        algorithm: "CMA-ES",
+        num_molecules: parseInt(numMolecules),
+        property_name: "QED",
+        minimize: false,
+        min_similarity: parseFloat(minSimilarity),
+        particles: parseInt(particles),
+        iterations: parseInt(iterations),
+        smi: smiles,
+      };
+    
+      try {
+        const response = await fetch(invokeUrl, {
+          method: "POST",
         headers: {
-          Authorization: `Bearer ${API_KEY}`,
+          Authorization: `Bearer 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`,
           Accept: "application/json",
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
 
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+  
       const data = await response.json();
-      const generatedMolecules = JSON.parse(data.molecules).map((mol: any) => ({
+  
+      if (!data.molecules) {
+        throw new Error("Invalid response structure");
+      }
+  
+      const generatedMolecules = JSON.parse(data.molecules).map((mol) => ({
         structure: mol.sample,
         score: mol.score,
       }));
-
+  
       setMolecules(generatedMolecules);
-
+  
+      // Add the new entry to the history
+      const newHistoryEntry = {
+        smiles,
+        numMolecules: parseInt(numMolecules),
+        generatedMolecules,
+        createdAt: new Date().toISOString(),
+      };
+  
+      setHistory((prevHistory) => [...prevHistory, newHistoryEntry]);
+  
+      // Optionally, save the history in the database
       if (userId) {
-        await createMoleculeGenerationHistory(
-          {
-            smiles,
-            numMolecules: parseInt(numMolecules),
-            minSimilarity: parseFloat(minSimilarity),
-            particles: parseInt(particles),
-            iterations: parseInt(iterations),
-            generatedMolecules,
-          },
-          userId,
-        );
-
-        const updatedHistory = await getMoleculeGenerationHistoryByUser(userId);
-        setHistory(updatedHistory);
-      } else {
-        console.error("User ID is not available.");
+        await createMoleculeGenerationHistory(userId, newHistoryEntry);
       }
-
-      console.log(generatedMolecules);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <DefaultLayout>
       <Breadcrumb pageName="Generate Molecules" />

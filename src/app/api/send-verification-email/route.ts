@@ -9,7 +9,7 @@ export async function POST(request: Request) {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: "ProteinBind <onboarding@resend.dev>",
+      from: "ProSimBio <onboarding@resend.dev>",
       to: [email],
       subject: "Verify your email",
       react: VerifyEmailTemplate({ firstName, verificationUrl }),

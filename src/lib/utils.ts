@@ -1,13 +1,21 @@
-export const handleError = (error: unknown) => {
+
+// src/lib/utils.ts
+export const handleError = (error: any) => {
   if (error instanceof Error) {
-    console.error(error.message);
+    // Handle standard error object
+    console.error("Error: " + error.message);
     throw new Error(`Error: ${error.message}`);
   } else if (typeof error === "string") {
+    // Handle string error message
     console.error(error);
     throw new Error(`Error: ${error}`);
+  } else if (typeof error === "object") {
+    // Handle object errors (API response errors, for example)
+    console.error("Error: ", error);
+    throw new Error("An unknown error occurred");
   } else {
-    console.error(error);
-    throw new Error(`Unknown error: ${JSON.stringify(error)}`);
+    console.error("An unexpected error occurred");
+    throw new Error("An unexpected error occurred");
   }
 };
 
