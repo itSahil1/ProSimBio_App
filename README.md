@@ -41,9 +41,3 @@ The platform is designed to help researchers accelerate drug discovery by levera
 
 
 
-
-## 📞 **Contact & Community**
-
-If you have any questions or need support, feel free to join our Discord server or contact us through GitHub Discussions.
-
-<a href="https://discord.com/channels/1221368900579754074/1221368901162631243" target="_blank">Join Discord</a> | <a href="https://github.com/mendsalbert/proteinbind/discussions" target="_blank">GitHub Discussions</a>
