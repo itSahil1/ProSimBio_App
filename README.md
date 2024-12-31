@@ -1,8 +1,6 @@
 <div align="center">
   <br />
-    <a href="https://www.youtube.com/channel/UC-YsuP1JJVYUj9ivM9uBtEQ" target="_blank">
-      <img src="./public/drug_research.jpg" alt="ProteinBind Project Banner">
-    </a>
+  
   
   <br />
 
